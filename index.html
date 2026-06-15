@@ -216,6 +216,48 @@
             color: #667eea;
         }
 
+        .features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 30px 0;
+            padding: 20px 0;
+        }
+
+        .feature-card {
+            background: linear-gradient(135deg, #f8f9ff 0%, #eef0ff 100%);
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+            border: 1px solid #e0e7ff;
+        }
+
+        .feature-icon {
+            font-size: 2em;
+            margin-bottom: 8px;
+        }
+
+        .feature-title {
+            font-weight: bold;
+            color: #4c51bf;
+            margin-bottom: 5px;
+        }
+
+        .feature-desc {
+            font-size: 0.85em;
+            color: #666;
+        }
+
+        .badge {
+            display: inline-block;
+            background: #4c51bf;
+            color: white;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 0.75em;
+            margin: 2px;
+        }
+
         @media (max-width: 768px) {
             .header h1 {
                 font-size: 1.8em;
@@ -231,9 +273,39 @@
         <div class="header">
             <h1>🤖 Vision AI</h1>
             <p>多模态图片理解助手 · 基于 Qwen2-VL 模型</p>
+            <div style="margin-top: 15px;">
+                <span class="badge">Python</span>
+                <span class="badge">Gradio</span>
+                <span class="badge">PyTorch</span>
+                <span class="badge">Transformers</span>
+                <span class="badge">Qwen2-VL</span>
+            </div>
         </div>
 
         <div class="main">
+            <div class="features">
+                <div class="feature-card">
+                    <div class="feature-icon">🤖</div>
+                    <div class="feature-title">Qwen2-VL 模型</div>
+                    <div class="feature-desc">通义千问多模态大模型</div>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">💬</div>
+                    <div class="feature-title">智能问答</div>
+                    <div class="feature-desc">支持自定义问题</div>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🔍</div>
+                    <div class="feature-title">图片分析</div>
+                    <div class="feature-desc">详细解析图片内容</div>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">📝</div>
+                    <div class="feature-title">图片描述</div>
+                    <div class="feature-desc">一句话精准概括</div>
+                </div>
+            </div>
+
             <div class="upload-area" id="uploadArea">
                 <div class="upload-icon">📷</div>
                 <p><strong>点击或拖拽图片到此处</strong></p>
