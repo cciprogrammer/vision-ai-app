@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vision AI - 多模态图片理解</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei", sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 40px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
+        .main {
+            padding: 40px;
+        }
+
+        .upload-area {
+            border: 3px dashed #667eea;
+            border-radius: 15px;
+            padding: 40px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            background: #f8f9ff;
+        }
+
+        .upload-area:hover {
+            background: #eef0ff;
+            border-color: #764ba2;
+        }
+
+        .upload-area.dragover {
+            background: #e0e7ff;
+            border-color: #4c51bf;
+        }
+
+        .upload-area input {
+            display: none;
+        }
+
+        .upload-icon {
+            font-size: 3em;
+            margin-bottom: 10px;
+        }
+
+        .preview {
+            margin-top: 20px;
+            text-align: center;
+        }
+
+        .preview img {
+            max-width: 100%;
+            max-height: 400px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .input-group {
+            margin-top: 20px;
+        }
+
+        .input-group label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 8px;
+            color: #333;
+        }
+
+        textarea, select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+            resize: vertical;
+            transition: border-color 0.3s;
+        }
+
+        textarea:focus, select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 14px 32px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 15px;
+            width: 100%;
+            transition: transform 0.2s;
+        }
+
+        .btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .result {
+            margin-top: 30px;
+            padding: 20px;
+            background: #f8f9ff;
+            border-radius: 10px;
+            border-left: 4px solid #667eea;
+        }
+
+        .result h3 {
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+
+        .result-content {
+            white-space: pre-wrap;
+            line-height: 1.8;
+            color: #333;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-right: 10px;
+            vertical-align: middle;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .error {
+            background: #fee;
+            border-left-color: #f44;
+            color: #c33;
+        }
+
+        .footer {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+            font-size: 0.9em;
+            border-top: 1px solid #eee;
+        }
+
+        .footer a {
+            color: #667eea;
+            text-decoration: none;
+        }
+
+        .mode-selector {
+            display: flex;
+            gap: 10px;
+            margin: 20px 0;
+        }
+
+        .mode-btn {
+            flex: 1;
+            padding: 12px;
+            background: #f0f0f0;
+            border: 2px solid transparent;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+
+        .mode-btn.active {
+            background: #eef0ff;
+            border-color: #667eea;
+            color: #667eea;
+        }
+
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 1.8em;
+            }
+            .main {
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🤖 Vision AI</h1>
+            <p>多模态图片理解助手 · 基于 Qwen2-VL 模型</p>
+        </div>
+
+        <div class="main">
+            <div class="upload-area" id="uploadArea">
+                <div class="upload-icon">📷</div>
+                <p><strong>点击或拖拽图片到此处</strong></p>
+                <p style="color: #666; margin-top: 5px;">支持 JPG、PNG、WEBP 格式</p>
+                <input type="file" id="fileInput" accept="image/*">
+            </div>
+
+            <div class="preview" id="preview" style="display:none;">
+                <img id="previewImg" alt="预览">
+            </div>
+
+            <div class="mode-selector">
+                <div class="mode-btn active" data-mode="qa">💬 智能问答</div>
+                <div class="mode-btn" data-mode="analyze">🔍 图片分析</div>
+                <div class="mode-btn" data-mode="describe">📝 生成描述</div>
+            </div>
+
+            <div class="input-group" id="questionGroup">
+                <label>❓ 输入你的问题</label>
+                <textarea id="question" rows="3" placeholder="例如：这张图片里有什么？图片描述的是什么场景？"></textarea>
+            </div>
+
+            <button class="btn" id="submitBtn" disabled>🚀 提交分析</button>
+
+            <div class="result" id="result" style="display:none;">
+                <h3>✨ 分析结果</h3>
+                <div class="result-content" id="resultContent"></div>
+            </div>
+        </div>
+
+        <div class="footer">
+            <p>Powered by <a href="https://huggingface.co/Qwen/Qwen2-VL-2B-Instruct" target="_blank">Qwen2-VL</a> · 
+               Built by <a href="https://github.com/cciprogrammer" target="_blank">cciprogrammer</a></p>
+            <p style="margin-top: 8px;">⚠️ 当前为演示版本，请勿上传敏感图片</p>
+        </div>
+    </div>
+
+    <script>
+        // API 配置 - 使用 Hugging Face 公开推理 API
+        // 提示：因为浏览器直接调用会面临CORS问题，这里提供降级方案
+        const API_CONFIG = {
+            // 如果你有 token 可以填这里
+            HF_TOKEN: '',
+            // 备用：使用 polling 方式
+            useDirectAPI: false
+        };
+
+        let currentImage = null;
+        let currentMode = 'qa';
+
+        // DOM 元素
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('fileInput');
+        const preview = document.getElementById('preview');
+        const previewImg = document.getElementById('previewImg');
+        const submitBtn = document.getElementById('submitBtn');
+        const result = document.getElementById('result');
+        const resultContent = document.getElementById('resultContent');
+        const questionGroup = document.getElementById('questionGroup');
+        const questionInput = document.getElementById('question');
+
+        // 模式选择
+        document.querySelectorAll('.mode-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                currentMode = btn.dataset.mode;
+                
+                if (currentMode === 'qa') {
+                    questionGroup.style.display = 'block';
+                    questionInput.placeholder = '例如：这张图片里有什么？';
+                } else {
+                    questionGroup.style.display = 'none';
+                }
+            });
+        });
+
+        // 上传处理
+        uploadArea.addEventListener('click', () => fileInput.click());
+        
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('dragover');
+        });
+
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('dragover');
+        });
+
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+            const file = e.dataTransfer.files[0];
+            handleFile(file);
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            handleFile(file);
+        });
+
+        function handleFile(file) {
+            if (!file || !file.type.startsWith('image/')) {
+                alert('请选择图片文件！');
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                currentImage = e.target.result;
+                previewImg.src = currentImage;
+                preview.style.display = 'block';
+                submitBtn.disabled = false;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        // 提交分析
+        submitBtn.addEventListener('click', async () => {
+            if (!currentImage) {
+                alert('请先上传图片！');
+                return;
+            }
+
+            let question = '';
+            if (currentMode === 'qa') {
+                question = questionInput.value.trim();
+                if (!question) {
+                    alert('请输入问题！');
+                    return;
+                }
+            } else if (currentMode === 'analyze') {
+                question = '请详细分析这张图片的内容、场景、风格色调和值得注意的细节。';
+            } else if (currentMode === 'describe') {
+                question = '请用一句话简洁描述这张图片的主要内容。';
+            }
+
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<span class="loading"></span>分析中...';
+            result.style.display = 'block';
+            result.classList.remove('error');
+            resultContent.textContent = '正在分析图片，请稍候...';
+
+            try {
+                const answer = await callVisionAPI(currentImage, question);
+                resultContent.textContent = answer;
+            } catch (err) {
+                result.classList.add('error');
+                resultContent.textContent = `❌ 分析失败：${err.message}\n\n💡 提示：直接调用 Hugging Face API 会遇到 CORS 限制。建议：\n1. 部署到 Hugging Face Spaces（需要科学上网）\n2. 或下载 Python 版本（app.py）在本地运行\n3. 详细说明见 GitHub README`;
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '🚀 提交分析';
+            }
+        });
+
+        async function callVisionAPI(imageBase64, question) {
+            // 由于浏览器CORS限制，这里使用 Hugging Face Spaces 的 Gradio 客户端方式
+            // 实际部署时，建议使用 Gradio Client 或后端代理
+            
+            // 方法1: 提示用户部署到 HF Spaces
+            // 方法2: 使用 Gradio JS Client
+            
+            return new Promise((resolve, reject) => {
+                // 由于 CORS 限制，给出友好提示
+                setTimeout(() => {
+                    resolve(
+`📌 演示版本说明
+
+由于浏览器安全限制（CORS），前端无法直接调用 Hugging Face API。
+
+✅ 推荐部署方案：
+
+1️⃣ Hugging Face Spaces（需要科学上网）
+   - 推送代码到 https://huggingface.co/spaces
+   - 自动部署，完全免费
+
+2️⃣ 本地运行（推荐！）
+   下载项目后执行：
+   pip install -r requirements.txt
+   python app.py
+   访问 http://localhost:7860
+
+3️⃣ 服务器部署
+   - 阿里云/腾讯云学生机很便宜
+   - 部署 Gradio 服务
+
+🎯 简历加分项：
+- 完整的多模态AI应用开发
+- Python + Gradio 全栈开发
+- Hugging Face 模型集成
+- 简历写法见 GitHub README.md
+
+📂 项目地址：
+https://github.com/cciprogrammer/vision-ai-app
+
+💡 你的问题：${question}
+📷 图片已接收，等待后端API部署后即可分析！`
+                    );
+                }, 1500);
+            });
+        }
+    </script>
+</body>
+</html>
